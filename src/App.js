@@ -44,19 +44,36 @@ function App() {
     }
   };
 
-  // Fetch profile data from the user's pod
   const fetchProfileData = async (webId) => {
     try {
       const profileDataset = await getSolidDataset(webId, { fetch: session.fetch });
       const profile = getThing(profileDataset, webId);
-
+  
+      // Basic details
       const name = getStringNoLocale(profile, VCARD.fn) || "No name found";
       const role = getStringNoLocale(profile, VCARD.role) || "No role found";
       const organization = getStringNoLocale(profile, VCARD.organization_name) || "No organization found";
-      const street = getStringNoLocale(profile, VCARD.street_address) || "No street address found";
-      const country = getStringNoLocale(profile, VCARD.country_name) || "No country found";
-
-      setProfileData({ name, role, organization, street, country });
+      const note = getStringNoLocale(profile, VCARD.note) || "No note found";
+  
+      // Address (nested data)
+      const addressNode = getThing(profileDataset, getStringNoLocale(profile, VCARD.hasAddress));
+      const street = addressNode ? getStringNoLocale(addressNode, VCARD["street-address"]) : "No street address found";
+      const postalCode = addressNode ? getStringNoLocale(addressNode, VCARD["postal-code"]) : "No postal code found";
+      const country = addressNode ? getStringNoLocale(addressNode, VCARD["country-name"]) : "No country found";
+  
+      // Telephone (nested data)
+      const phoneNode = getThing(profileDataset, getStringNoLocale(profile, VCARD.hasTelephone));
+      const phone = phoneNode ? getStringNoLocale(phoneNode, VCARD.value) : "No phone number found";
+  
+      // Set state with all retrieved details
+      setProfileData({
+        name,
+        role,
+        organization,
+        note,
+        address: { street, postalCode, country },
+        phone,
+      });
     } catch (error) {
       console.error("Failed to fetch profile data:", error);
     }
@@ -126,15 +143,20 @@ function App() {
 
         {/* Profile Data */}
         {loggedIn && profileData.name && (
-          <div className="profile">
-            <h3>Profile Information:</h3>
-            <p><strong>Name:</strong> {profileData.name}</p>
-            <p><strong>Role:</strong> {profileData.role}</p>
-            <p><strong>Organization:</strong> {profileData.organization}</p>
-            <p><strong>Street Address:</strong> {profileData.street}</p>
-            <p><strong>Country:</strong> {profileData.country}</p>
-          </div>
-        )}
+  <div className="profile">
+    <h3>Profile Information:</h3>
+    <p><strong>Name:</strong> {profileData.name}</p>
+    <p><strong>Role:</strong> {profileData.role}</p>
+    <p><strong>Organization:</strong> {profileData.organization}</p>
+    <p><strong>Note:</strong> {profileData.note}</p>
+    <h4>Address:</h4>
+    <p><strong>Street:</strong> {profileData.address?.street}</p>
+    <p><strong>Postal Code:</strong> {profileData.address?.postalCode}</p>
+    <p><strong>Country:</strong> {profileData.address?.country}</p>
+    <h4>Contact:</h4>
+    <p><strong>Phone:</strong> {profileData.phone}</p>
+  </div>
+)}
 
         {/* Pod URL Input */}
         {loggedIn && (
