@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import logo from "./logo.svg";
 import "./App.css";
 import { Session } from "@inrupt/solid-client-authn-browser";
-import { getSolidDataset, getThingAll, getThing, getStringNoLocale } from "@inrupt/solid-client";
+import { getSolidDataset, getThingAll, getThing, getStringNoLocale, saveSolidDatasetAt, createThing, setThing } from "@inrupt/solid-client";
 
 // Namespaces
 const VCARD = "http://www.w3.org/2006/vcard/ns#";
@@ -13,6 +13,7 @@ function App() {
   const [webId, setWebId] = useState("");
   const [podUrl, setPodUrl] = useState("");
   const [profileData, setProfileData] = useState({});
+  const [data, setData] = useState([]);
   const [authFlow, setAuthFlow] = useState("");
 
   // Handle redirect after login
@@ -58,6 +59,39 @@ function App() {
       setProfileData({ name, role, organization, street, country });
     } catch (error) {
       console.error("Failed to fetch profile data:", error);
+    }
+  };
+
+  // Read data from pod
+  const readDataFromPod = async () => {
+    try {
+      if (!podUrl) {
+        alert("Please enter a pod URL");
+        return;
+      }
+      const dataset = await getSolidDataset(podUrl, { fetch: session.fetch });
+      const items = getThingAll(dataset);
+      setData(items); // Update state with retrieved data
+      console.log("Data from pod:", items);
+    } catch (error) {
+      console.error("Failed to read data from pod:", error);
+    }
+  };
+
+  // Write data to pod
+  const writeDataToPod = async () => {
+    try {
+      if (!podUrl) {
+        alert("Please enter a pod URL");
+        return;
+      }
+      let dataset = await getSolidDataset(podUrl, { fetch: session.fetch });
+      const thing = createThing({ name: "example" });
+      dataset = setThing(dataset, thing);
+      await saveSolidDatasetAt(podUrl, dataset, { fetch: session.fetch });
+      alert("Data written to pod successfully!");
+    } catch (error) {
+      console.error("Failed to write data to pod:", error);
     }
   };
 
@@ -111,6 +145,26 @@ function App() {
               value={podUrl}
               onChange={(e) => setPodUrl(e.target.value)}
             />
+          </div>
+        )}
+
+        {/* Read and Write Buttons */}
+        {loggedIn && (
+          <div>
+            <button onClick={readDataFromPod} className="read-button">Read Data from Pod</button>
+            <button onClick={writeDataToPod} className="write-button">Write Data to Pod</button>
+          </div>
+        )}
+
+        {/* Display Pod Data */}
+        {data.length > 0 && (
+          <div>
+            <h3>Data from Pod:</h3>
+            <ul>
+              {data.map((item, index) => (
+                <li key={index}>{JSON.stringify(item)}</li>
+              ))}
+            </ul>
           </div>
         )}
       </header>

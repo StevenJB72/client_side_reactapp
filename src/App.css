@@ -65,3 +65,27 @@
 .login-button:hover {
   opacity: 0.9;
 }
+
+.read-button,
+.write-button {
+  padding: 10px 20px;
+  margin: 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.read-button:hover {
+  background-color: #0056b3;
+}
+
+.write-button {
+  background-color: #28a745;
+}
+
+.write-button:hover {
+  background-color: #218838;
+}
